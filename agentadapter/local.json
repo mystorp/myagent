@@ -1,0 +1,9 @@
+{
+	"server": {
+		"protocol": "http:",
+	    "port": 4000,
+	    "host": "127.0.0.1",
+	    "path": "/",
+	    "method": "POST"
+	}
+}
