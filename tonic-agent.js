@@ -1,38 +1,35 @@
 const url = require('url');
+const fs = require('fs');
 
 const PORT = 3000;
 
-var agentAdapter;
+var agentAdapter = require('./agentadapter');
 
 if(module === require.main) {
-  main();
-}
-
-function main() {
-  var adapter = process.argv[2];
-  if(!adapter) {
-    console.error("no adapter\nstop ...");
-    return;
-  }
-  agentAdapter = require('./agentadapter').getAdapter(adapter);
   startProxyServer();
 }
 
 // 简单代理请求
-function doRequest(originRequest, originResponse) {
-  var parts = url.parse(originRequest.url);
+function doRequest(browserRequest, browserResponse) {
+  if(browserRequest.url.indexOf('http') !== 0) {
+    browserResponse.writeHead(403);
+    browserResponse.end("error");
+    return;
+  }
+  var parts = url.parse(browserRequest.url);
   var params = {header: 'on'};
   var options = {
     protocol: parts.protocol,
     hostname: parts.hostname,
     port: parts.port ? parts.port : parts.protocol === "http:" ? 80 : 443,
     path: parts.path,
-    method: originRequest.method,
-    headers: filterHeader(originRequest)
+    method: browserRequest.method,
+    headers: filterHeader(browserRequest)
   };
   params.host = options.hostname;
   params.port = options.port;
-  agentAdapter.requestHandler(originRequest, originResponse, options, params);
+  var adapter = getAdapterFor(options.hostname);
+  adapter.requestHandler(browserRequest, browserResponse, options, params);
 }
 
 // 隧道代理请求
@@ -42,7 +39,8 @@ function doConnect(req, socket, head){
     host: parts.hostname,
     port: parts.port
   };
-  agentAdapter.connectHandler(req, socket, options);
+  var adapter = getAdapterFor(parts.hostname);
+  adapter.connectHandler(req, socket, options);
   socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
   socket.write(head);
 }
@@ -76,6 +74,28 @@ function serilizeHttpHeader(request) {
     });
     return parts.join('-');
   }
+}
+
+var hosts = require('./hosts');
+function getAdapterFor(host) {
+  var h, adapters, ret, find = false;
+  host = host.split('.');
+  host = host[host.length - 2] + '.' + host[host.length - 1];
+  for(h in hosts) {
+    if(h.indexOf(host) > -1) {
+      find = true;
+      break;
+    }
+  }
+  if(find) {
+    adapters = hosts[h];
+  }
+  if(!adapters) {
+    adapters = "direct";
+  }
+  console.log('load adapter', adapters, "for", host);
+  ret = agentAdapter.getAdapter(adapters);
+  return ret;
 }
 
 

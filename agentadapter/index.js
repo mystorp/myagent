@@ -8,11 +8,16 @@ var adapterCache = {};
 exports.getAdapter = getAdapter;
 exports.parseHeader = parseHeader;
 
+/**
+ * 根据指定的参数获取 adapter
+ * 目前的 adapter 都是单一型的，后面考虑加入组合型的
+ */
 function getAdapter(adapter) {
 	if(adapterCache.hasOwnProperty(adapter)) {
 		return adapterCache[adapter];
 	} else {
 		var obj = require('./' + adapter);
+		console.log("load adapter:", adapter);
 		if(!obj.hasOwnProperty('requestHandler')) {
 			obj.requestHandler = defaultRequestHandler;
 		}
@@ -79,39 +84,37 @@ function parseHeader(reader, callback) {
 	}
 }
 
-function defaultRequestHandler(originRequest, originResponse, options, params) {
+function defaultRequestHandler(browserRequest, browserResponse, options, params) {
 	var adapter = this, serverOptions = clone(adapter.server);
 	var mod = serverOptions.protocol === "http:" ? http : https;
 	serverOptions.path = appendArgs(serverOptions.path, params);
 	var requestObj = mod.request(serverOptions, function(response){
-		originResponse.writeHead(response.statusCode, response.headers);
-		response.pipe(originResponse);
+		browserResponse.writeHead(response.statusCode, response.headers);
+		response.pipe(browserResponse);
 	});
 	requestObj.on('error', function(e){
-		originResponse.writeHead(500);
-		originResponse.end("adapter error");
+		browserResponse.writeHead(500);
+		browserResponse.end("adapter error");
 	});
 	requestObj.write(JSON.stringify(options));
 	requestObj.write('\r\n');
-	originRequest.pipe(requestObj);
+	browserRequest.pipe(requestObj);
 }
 
-function defaultConnectHandler(originRequest, originSocket, params) {
+function defaultConnectHandler(browserRequest, browserSocket, params) {
 	var adapter = this, serverOptions = clone(adapter.server);
 	var mod = serverOptions.protocol === "http:" ? http : https;
 	serverOptions.path = appendArgs(serverOptions.path, params);
 	var requestObj = mod.request(serverOptions, function(response){
-		// 最终响应数据一字不漏的返回给浏览器
-		console.log('server responsed');
-		response.pipe(originSocket);
+		response.pipe(browserSocket);
 	});
 	requestObj.on('error', function(e){
 		console.error(e.message);
 		console.log(e.stack);
-		originSocket.destroy();
+		browserSocket.destroy();
 	});
 	// 发送请求数据
-	originSocket.pipe(requestObj);
+	browserSocket.pipe(requestObj);
 }
 
 function appendArgs(url, query) {
