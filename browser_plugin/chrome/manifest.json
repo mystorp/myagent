@@ -1,0 +1,17 @@
+{
+    "manifest_version": 2,
+    "name": "myagent",
+    "description": "myagent chrome plugin",
+    "version": "1.2",
+    "permissions": [
+    "<all_urls>","tabs","storage"
+    ],
+    "background": {"page":"bg.html"},
+    "icons": {
+        "128": "logo128.png"
+    },
+    "browser_action": {
+        "default_icon": "logo128.png",
+        "default_popup": "popup.html"
+    }
+}

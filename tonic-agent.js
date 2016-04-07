@@ -12,6 +12,12 @@ if(module === require.main) {
 // 简单代理请求
 function doRequest(browserRequest, browserResponse) {
   if(browserRequest.url.indexOf('http') !== 0) {
+    // TODO:
+    // 这种方式，需要把服务器设置为 http 服务器
+    // 为了方便浏览器插件使用，需要添加如下接口
+    //  - 查询 adapter
+    //  - 查询 hosts.json
+    //  - 设置某 host 的 adapter
     browserResponse.writeHead(403);
     browserResponse.end("error");
     return;
@@ -77,20 +83,31 @@ function serilizeHttpHeader(request) {
 }
 
 var hosts = require('./hosts');
-function getAdapterFor(host) {
-  var h, adapters, ret, find = false;
-  host = host.split('.');
-  host = host[host.length - 2] + '.' + host[host.length - 1];
-  for(h in hosts) {
-    if(h.indexOf(host) > -1) {
-      find = true;
-      break;
+
+function extractHosts(o) {
+  var adapter, hosts, ret = {}, i, len;
+  for(adapter in o) {
+    hosts = o[adapter];
+    for(i=0,len=hosts.length;i<len;i++) {
+      if(ret.hasOwnProperty(hosts[i])) {
+        console.warn("已经为主机", hosts[i], "设置了适配器：", ret[hosts[i]], "；忽略当前适配器：", adapter);
+      } else {
+        ret[hosts[i]] = adapter;
+      }
     }
   }
-  if(find) {
-    adapters = hosts[h];
+}
+
+function getAdapterFor(host) {
+  var h, adapters, ret, find = false;
+  if(!net.isIP(host)) {
+    host = host.split('.');
+    host = host[host.length - 2] + '.' + host[host.length - 1];
   }
-  if(!adapters) {
+  adapters = hosts[h];
+  if(typeof adapters === "string") {
+    adapters = hosts[h];
+  } else {
     adapters = "direct";
   }
   console.log('load adapter', adapters, "for", host);
