@@ -1,9 +1,10 @@
 const url = require('url');
 const fs = require('fs');
+const net = require('net');
 
 const PORT = 3000;
 
-var agentAdapter = require('./agentadapter');
+var agentAdapter = require('./adapters');
 
 if(module === require.main) {
   startProxyServer();
@@ -11,7 +12,7 @@ if(module === require.main) {
 
 // 简单代理请求
 function doRequest(browserRequest, browserResponse) {
-  if(browserRequest.url.indexOf('http') !== 0) {
+  if(browserRequest.url.indexOf('/') === 0) {
     // TODO:
     // 这种方式，需要把服务器设置为 http 服务器
     // 为了方便浏览器插件使用，需要添加如下接口
@@ -82,7 +83,7 @@ function serilizeHttpHeader(request) {
   }
 }
 
-var hosts = require('./hosts');
+var hosts = extractHosts(require('./hosts'));
 
 function extractHosts(o) {
   var adapter, hosts, ret = {}, i, len;
@@ -96,17 +97,19 @@ function extractHosts(o) {
       }
     }
   }
+  return ret;
 }
 
 function getAdapterFor(host) {
-  var h, adapters, ret, find = false;
+  var adapters, ret, find = false;
+  // 所有多级域名转换为一级域名
   if(!net.isIP(host)) {
     host = host.split('.');
     host = host[host.length - 2] + '.' + host[host.length - 1];
   }
-  adapters = hosts[h];
+  adapters = hosts[host];
   if(typeof adapters === "string") {
-    adapters = hosts[h];
+    adapters = hosts[host];
   } else {
     adapters = "direct";
   }
