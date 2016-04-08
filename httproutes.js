@@ -7,7 +7,9 @@ var routes = {
 	'/host/add': function(){},
 	'/host/list': function(){},
 	'/adapter/list': function(){},
-	'/proxy.pac': function(){}
+	'/proxy.pac': function(req, resp){
+		resp.setHeader('Content-Type', 'application/x-ns-proxy-autoconfig');
+	}
 };
 
 exports.onRequest = onRequest;
