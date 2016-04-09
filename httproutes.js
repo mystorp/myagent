@@ -2,6 +2,9 @@
  * 这个文件提供直接访问代理服务器时的一些接口
  */
 
+var config = require('./config');
+var hostmgt = require('./hostmgt');
+
 var routes = {
 	'/host/update': function(){},
 	'/host/add': function(){},
@@ -9,6 +12,7 @@ var routes = {
 	'/adapter/list': function(){},
 	'/proxy.pac': function(req, resp){
 		resp.setHeader('Content-Type', 'application/x-ns-proxy-autoconfig');
+		resp.end(proxy_pac);
 	}
 };
 
@@ -30,3 +34,7 @@ function onRequest(req, resp) {
 		resp.end("Page Not Found");
 	}
 }
+
+var proxy_pac = (function(){
+	return 'function FindProxyForURL(){ return "PROXY ' + config.host + ':' + config.port + '";}';
+})();
