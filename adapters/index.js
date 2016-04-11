@@ -1,88 +1,109 @@
-var http = require('http');
-var https = require('https');
-var urllib = require('url');
-var qs = require('querystring');
+const http = require('http');
+const https = require('https');
+const urllib = require('url');
+const qs = require('querystring');
+const fs = require('fs');
 
-var adapterCache = {};
+const utils = require('../utils');
+const config = require('../config');
+const hostmgt = require('../hostmgt');
+const adapterCache = {};
 
-exports.getAdapter = getAdapter;
-exports.parseHeader = parseHeader;
+exports.getAdapterNames = getAdapterNames;
+exports.getAdapterFor = getAdapterFor;
 
-/**
- * 根据指定的参数获取 adapter
- * 目前的 adapter 都是单一型的，后面考虑加入组合型的
- */
-function getAdapter(adapter) {
-	if(adapterCache.hasOwnProperty(adapter)) {
-		return adapterCache[adapter];
-	} else {
-		var obj = require('./' + adapter);
-		console.log("load adapter:", adapter);
-		if(!obj.hasOwnProperty('requestHandler')) {
-			obj.requestHandler = defaultRequestHandler;
-		}
-		if(!obj.hasOwnProperty('connectHandler')) {
-			obj.connectHandler = defaultConnectHandler;
-		}
-		adapterCache[adapter] = obj;
-		return obj;
+loadAllAdapters();
+
+
+function _loadAdapter(file) {
+	var o = require('./' + file);
+	if(!obj.hasOwnProperty('requestHandler')) {
+		obj.requestHandler = defaultRequestHandler;
 	}
+	if(!obj.hasOwnProperty('connectHandler')) {
+		obj.connectHandler = defaultConnectHandler;
+	}
+	o.excludes = utils.ensureArray(o.excludes) || [];
+	o.includes = utils.ensureArray(o.includes) || [];
+	return o;
 }
 
-function parseHeader(reader, callback) {
-	var resp = {headers: {}}, bytes = [], endIndex;
-	var endCount = 0;
-	reader.on('data', onData);
-	reader.on('end', onEnd);
-	function onData(chunk) {
-		var i = 0, len = chunk.length;
-		var endstr = "\r\n", j = endIndex || 0;
-		for(;i<len;i++) {
-			if(chunk[i] === endstr.charAt(j)) {
-				j++;
-			} else {
-				j = 0;
-				endCount = 0;
-				bytes.push(chunk[i]);
-			}
-			if(j === endstr.length) {
-				if(bytes.length > 0) {
-					parseLine(new Buffer(bytes).toString());
-					bytes = [];
-				}
-				endCount++;
-			}
-			if(endCount === 2) {
-				reader.unshift(chunk.slice(i + 1));
-				reader.removeListener('data', onData);
-				reader.removeListener('end', onEnd);
-				callback(null, resp);
-			}
-		}
-		endIndex = j;
+function loadAllAdapters() {
+	var files = fs.readdirSync(__dirname);
+	var excludes = ['index.js'];
+	var extre = /\.js(?:on)?$/i;
+	var cache = {};
+	if(!config.debug) {
+		excludes.push('local.json');
 	}
-	function onEnd() {
-		reader.removeListener('data', onData);
-		reader.removeListener('end', onEnd);
-		if(bytes.length > 0) {
-			reader.unshift(new Buffer(bytes));
+	files.filter(function(file){
+		var include = true, name;
+		if(!extre.test(file)) { return; }
+		excludes.forEach(function(f){
+			if(f === file) {
+				include = false;
+				return false;
+			}
+		});
+		if(include) {
+			name = file.replace(extre, '');
+			utils.debug('find adapter: ' + name);
+			cache[name] = _loadAdapter(file);
+			utils.debug('load adapter: ' + name);
 		}
-		callback(null, {statusCode: 200, header: {}});
-	}
-	function parseLine(s) {
-		var parts;
-		console.log('parse header line:', s);
-		if(s.indexOf('HTTP/') === 0) {
-			parts = s.split(' ');
-			resp.httpVersion = parts[0];
-			resp.statusCode = parseInt(parts[1]);
-			resp.statusMessage = parts[2];
-		} else {
-			parts = s.split(': ');
-			resp.headers[parts[0]] = parts[1];
-		}
-	}
+	});
+	adapterCache = cache;
+	utils.debug('all adapters were laoded!');
 }
+
+function getAdapterFor(host) {
+	var k, adapter, ret = [], gfwProtected;
+	gfwProtected = hostmgt.hasHost(host);
+	for(k in adapterCache) {
+		if(!adapterCache.hasOwnProperty(k)) {
+			continue;
+		}
+		adapter = adapterCache[k];
+		ret.push([adapter, getPriority(adapter, host, gfwProtected)]);
+	}
+	ret.sort(function(a, b){
+		return b[1] - a[1];
+	});
+	// 返回优先级最高的 adapter
+	return ret[0];
+}
+
+function getPriority(adapter, host, gfwProtected) {
+	var i, len, hit, arr;
+	// 是否翻墙标志不一致，直接返回
+	if(adapter.gfwProtected !== gfwProtected) {
+		return -1;
+	}
+	hit = false;
+	arr = adapter.excludes;
+	for(i=0,len=arr;i<len;i++) {
+		if(arr[i].indexOf(host) > -1) {
+			hit = true;
+			break;
+		}
+	}
+	if(hit) {
+		return 0;
+	}
+	arr = adapter.includes;
+	for(i=0,len=arr;i<len;i++) {
+		if(arr[i].indexOf(host) > -1) {
+			hit = true;
+			break;
+		}
+	}
+	return hit ? 10 : 1;
+}
+
+function getAdapterNames() {
+	return Object.keys(adapterCache);
+}
+
 
 function defaultRequestHandler(browserRequest, browserResponse, options, params) {
 	var adapter = this, serverOptions = clone(adapter.server);

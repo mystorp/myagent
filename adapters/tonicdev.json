@@ -1,4 +1,5 @@
 {
+	"gfwProtected": true,
 	"server": {
 		"protocol": "https:",
 	    "port": 443,
