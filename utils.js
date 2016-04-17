@@ -7,6 +7,7 @@ if(typeof currentDebugLevel !== "number") {
 
 exports.debug = debug;
 exports.ensureArray = ensureArray;
+exports.getPostBody = getPostBody;
 
 function debug(level, msg) {
 	if(typeof level === "string") {
@@ -34,6 +35,16 @@ function ensureArray(s) {
 		parts[i] = parts[i].trim();
 	}
 	return parts;
+}
+
+function getPostBody(request, callback) {
+	var list = [];
+	request.on('data', function(c){ list.push(c); });
+	request.on('end', function(){
+		var buf = Buffer.concat(list);
+		callback(null, buf);
+	});
+	request.on('error', callback);
 }
 /* 之前写的，暂时用不上 */
 function parseHeader(reader, callback) {
