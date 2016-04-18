@@ -10,10 +10,14 @@
 
 	function $(s) { return document.querySelector(s); }
 	function addHost() {
-		chrome.sendMessage({cmd: 'add', host: host}, function(){});
+		chrome.sendMessage({cmd: 'add', host: host}, function(ret){
+			console.log('添加主机 ' + host + (ret ? ' 成功！' : ' 失败！'));
+		});
 	}
 	function removeHost() {
-		chrome.sendMessage({cmd: 'remove', host: host}, function(){});
+		chrome.sendMessage({cmd: 'remove', host: host}, function(ret){
+			console.log('删除主机 ' + host + (ret ? ' 成功！' : ' 失败！'));
+		});
 	}
 	function hidePopup() {}
 

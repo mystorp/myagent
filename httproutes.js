@@ -9,6 +9,10 @@ const adapters = require('./adapters');
 const utils = require('./utils');
 
 const routes = {
+	'ping': function(req, resp){
+		resp.setHeader('Content-Type', 'text/json');
+		resp.end(JSON.stringify({status: true}));
+	},
 	'/host/remove': function(req, resp){
 		utils.getPostBody(req, function(e, buf){
 			var body = toQuery(buf);
