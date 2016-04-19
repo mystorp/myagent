@@ -2,6 +2,7 @@
  * 这个文件提供直接访问代理服务器时的一些接口
  */
 const qs = require('querystring');
+const url = require('url');
 
 const config = require('./config');
 const hostmgt = require('./hostmgt');
@@ -9,7 +10,7 @@ const adapters = require('./adapters');
 const utils = require('./utils');
 
 const routes = {
-	'ping': function(req, resp){
+	'/ping': function(req, resp){
 		resp.setHeader('Content-Type', 'text/json');
 		resp.end(JSON.stringify({status: true}));
 	},

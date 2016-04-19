@@ -7,7 +7,6 @@ exports.connectHandler = connectHandler;
 
 function requestHandler(browserRequest, browserResponse, options, params) {
 	var mod = options.protocol === "http:" ? http : https;
-	console.log('direct request:', params);
 	var requestObj = mod.request(options, function(response){
 		browserResponse.writeHead(response.statusCode, response.headers);
 		response.pipe(browserResponse);
@@ -20,7 +19,6 @@ function requestHandler(browserRequest, browserResponse, options, params) {
 }
 
 function connectHandler(browserRequest, browserSocket, params) {
-	console.log('direct connect:', params);
 	var socket = net.connect(parseInt(params.port), params.host);
 	socket.on('timeout', function(){
 		browserSocket.end("forward server timeout");

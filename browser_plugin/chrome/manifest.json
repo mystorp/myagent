@@ -4,7 +4,7 @@
     "description": "myagent chrome plugin",
     "version": "1.2",
     "permissions": [
-    "<all_urls>","tabs","storage"
+    "<all_urls>","tabs","storage","proxy"
     ],
     "background": {"page":"bg.html"},
     "icons": {

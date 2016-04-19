@@ -7,17 +7,41 @@
 	<script type="text/javascript" src="js/popup.js"></script>
 </head>
 <body>
-<div id="question-box" class="wrapper">
-	<p>翻墙访问该网站？</p>
-	<br/><br/>
-	<button id="anwser-yes">是</button>
-	<button id="anwser-no">否</button>
+<div class="setup-container">
+	<div class="setup">
+		<p>您还没有设置代理服务器</p>
+		<p>设置代理服务器成功后才可以翻墙</p>
+		<p>现在要开始设置代理服务器吗？</p>
+		<button id="anwser-setup" class="fr mr20">是的，我要</button>
+		<a id="anwser-skip-setup" class="fr" href="">跳过</a>
+	</div>
+	<div class="form">
+		<p>请输入代理服务器信息：</p>
+		<label>代理服务器<span class="red">*</span>：</label>
+		<input type="text" name="server"/>
+		<br/>
+		<label>代理端口<span class="red">*</span>：</label>
+		<input type="number" name="port" min="0" max="65536" />
+		<br/>
+		<button id="anwser-submit" class="fr mr20">确定</button>
+		<br/>
+	</div>
+	<div class="clear"></div>
 </div>
-<div id="info-box" class="wrapper">
-	<p>当前网站已翻墙</p>
-	<br/><br/>
-	<button id="anwser-cancel">取消翻墙</button>
-	<button id="anwser-good">翻墙大法好</button>
+<div class="info-container">
+	<div id="question-box" class="wrapper">
+		<p>翻墙访问该网站？</p>
+		<br/><br/>
+		<button id="anwser-yes" class="fr mr20">是</button>
+		<button id="anwser-no" class="fr">否</button>
+	</div>
+	<div id="info-box" class="wrapper">
+		<p class="green">当前网站已翻墙</p>
+		<br/><br/>
+		<button id="anwser-cancel" class="fr mr20">取消翻墙</button>
+		<button id="anwser-good" class="fr">翻墙大法好</button>
+	</div>
 </div>
+
 </body>
 </html>

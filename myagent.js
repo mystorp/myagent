@@ -2,9 +2,9 @@ const url = require('url');
 const fs = require('fs');
 const net = require('net');
 
-const config = require('config');
-
-var agentAdapter = require('./adapters');
+const config = require('./config');
+const httpRoutes = require('./httproutes');
+const agentAdapter = require('./adapters');
 
 if(module === require.main) {
 	startProxyServer();
@@ -21,16 +21,10 @@ function startProxyServer() {
 // 简单代理请求
 function doRequest(browserRequest, browserResponse) {
 	if(browserRequest.url.indexOf('/') === 0) {
-		// TODO:
-		// 这种方式，需要把服务器设置为 http 服务器
-		// 为了方便浏览器插件使用，需要添加如下接口
-		//  - 查询 adapter
-		//  - 查询 hosts.json
-		//  - 设置某 host 的 adapter
-		browserResponse.writeHead(403);
-		browserResponse.end("error");
+		httpRoutes.onRequest(browserRequest, browserResponse);
 		return;
 	}
+	console.log('request:', browserRequest.url);
 	var parts = url.parse(browserRequest.url);
 	var params = {header: 'on'};
 	var options = {
@@ -49,6 +43,7 @@ function doRequest(browserRequest, browserResponse) {
 
 // 隧道代理请求
 function doConnect(req, socket, head){
+	console.log('connect:', req.url);
 	var parts = url.parse('http://' + req.url);
 	var options = {
 		host: parts.hostname,

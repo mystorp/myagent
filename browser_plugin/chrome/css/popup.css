@@ -1,0 +1,20 @@
+* {margin: 0;padding: 0;}
+body {width: 300px;}
+p {line-height: 2;font-size: 16px;white-space: nowrap;}
+a, button {font-size: 14px;display: inline-block;padding: 3px 4px;}
+a {color: #3385ff;}
+a:hover {text-decoration: none;}
+a + button, button + a, button + button {margin-right: 10px;}
+label {display: block;margin: 3px 0;}
+input {display: inline-block;width: 220px;margin: 2px 0;}
+.fr {float: right;}
+.red {color: #F22;}
+.mr20 {margin-right: 20px;}
+.green {color: #16B52D;}
+.setup, .wrapper {padding: 10px;}
+.setup a {padding-top: 6px;}
+.setup-container {width: 900px;}
+.setup, .form {width: 300px;float: left;}
+.setup {-webkit-transition: all .3s;}
+.clear {clear: both;}
+.setup-container, .info-container {display: none;}

@@ -7,25 +7,23 @@ const fs = require('fs');
 const utils = require('../utils');
 const config = require('../config');
 const hostmgt = require('../hostmgt');
-const adapterCache = {};
+const adapterCache = loadAllAdapters();
 
 exports.getAdapterNames = getAdapterNames;
 exports.getAdapterFor = getAdapterFor;
 
-loadAllAdapters();
-
 
 function _loadAdapter(file) {
-	var o = require('./' + file);
+	var obj = require('./' + file);
 	if(!obj.hasOwnProperty('requestHandler')) {
 		obj.requestHandler = defaultRequestHandler;
 	}
 	if(!obj.hasOwnProperty('connectHandler')) {
 		obj.connectHandler = defaultConnectHandler;
 	}
-	o.excludes = utils.ensureArray(o.excludes) || [];
-	o.includes = utils.ensureArray(o.includes) || [];
-	return o;
+	obj.excludes = utils.ensureArray(obj.excludes) || [];
+	obj.includes = utils.ensureArray(obj.includes) || [];
+	return obj;
 }
 
 function loadAllAdapters() {
@@ -52,8 +50,8 @@ function loadAllAdapters() {
 			utils.debug('load adapter: ' + name);
 		}
 	});
-	adapterCache = cache;
 	utils.debug('all adapters were laoded!');
+	return cache;
 }
 
 function getAdapterFor(host) {
@@ -70,7 +68,7 @@ function getAdapterFor(host) {
 		return b[1] - a[1];
 	});
 	// 返回优先级最高的 adapter
-	return ret[0];
+	return ret[0][0];
 }
 
 function getPriority(adapter, host, gfwProtected) {

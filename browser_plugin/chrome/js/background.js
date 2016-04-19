@@ -13,9 +13,10 @@
 			});
 			// cache all fq hosts
 		} else {
-			console.log("尚未配置代理服务器");
+			console.log("no proxy set");
 		}
 	});
+	monitorEvents();
 
 	function loadConfig(callback) {
 		var key = 'proxy-server';
@@ -49,9 +50,9 @@
 				data.forEach(function(host){
 					hostsCache[host] = 1;
 				});
-				monitorEvents();
+				applyProxy();
 			} else {
-				console.log('没有获取到需要翻墙的主机列表 ');
+				console.log('cache hosts failure');
 				setTimeout(cache_hosts, 1000);
 			}
 		});
@@ -83,6 +84,26 @@
 			}
 			return async;
 		});
+	}
+	function applyProxy() {
+		var onGetProxyPAC = function(data) {
+			if(typeof data === "string" && data.indexOf('function FindProxyForURL') === 0) {
+				chrome.proxy.settings.set({
+					value: {
+						mode: "pac_script",
+						pacScript: {data: data}
+					}
+				}, function(){
+					console.log('after set proxy:', arguments);
+				});
+			}
+		}
+		ajax({
+			url: 'http://' + config.server() + ':' + config.port() + '/proxy.pac',
+			success: onGetProxyPAC,
+			error: onGetProxyPAC
+		});
+		
 	}
 	function doSetup(host, port, callback) {
 		ping(host, port, function(data){
