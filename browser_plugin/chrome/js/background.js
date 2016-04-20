@@ -1,3 +1,14 @@
+/**
+ * chrome 插件的背景页逻辑：
+ * 1. 加载配置
+ *       |-- 还没有配置数据 --> 不做任何操作
+ *       |-- 已经有配置数据 -->
+ *                            |-- 如果能连通代理服务器，就设置代理
+ *                            |-- 不做任何操作
+ * 2. 监听事件
+ *       |-- 插件自定义事件
+ *       |-- 监听 tab 变化事件，动态调整 popup
+ */
 (function(){
 	var config;
 	var hostsCache = {};
@@ -11,7 +22,10 @@
 					cache_hosts();
 				}
 			});
-			// cache all fq hosts
+			if(config.proxy() === true) {
+				chrome.proxy.settings.clear({});
+				config.proxy(false);
+			}
 		} else {
 			console.log("no proxy set");
 		}
@@ -36,6 +50,14 @@
 						return cfg.port || null;
 					} else {
 						cfg.port = port;
+						saveConfig(key, cfg);
+					}
+				},
+				proxy: function(flag){
+					if(typeof flag === "undefined") {
+						return cfg.flag || null;
+					} else {
+						cfg.flag = flag;
 						saveConfig(key, cfg);
 					}
 				}
@@ -64,15 +86,23 @@
 	}
 	function ping(host, port, callback) {
 		var url = 'http://' + host + ':' + port + '/ping';
-		ajax({
-			method: 'POST',
-			url: url,
-			success: callback,
-			error: callback,
-			dataType: 'json'
-		});
+		var timer = setInterval(function(){
+			ajax({
+				url: url,
+				success: onResponse,
+				error: onResponse,
+				dataType: 'json'
+			});
+		}, 1000);
+		function onResponse(data) {
+			if(data && data.status === true) {
+				clearInterval(timer);
+			}
+			callback && callback(data);
+		}
 	}
 	function monitorEvents() {
+		// plugin custom events
 		chrome.runtime.onMessage.addListener(function(msg, sender, callback){
 			var async = false;
 			switch(msg.cmd) {
@@ -84,26 +114,38 @@
 			}
 			return async;
 		});
+		// tabs events
+		var activeTabId;
+		chrome.tabs.onActivated.addListener(function(info){
+			activeTabId = info.tabId;
+			chrome.tabs.get(info.tabId, function(tab){
+				tab.url && updateLabel(tab.url);
+			});
+		});
+		chrome.tabs.onUpdated.addListener(function(tabId, changes){
+			if(tabId === activeTabId && changes.url) {
+				updateLabel(changes.url);
+			}
+		});
+	}
+	function updateLabel(url) {
+		if(!/^(?:https?|ftp)/.test(url)) {
+			return chrome.browserAction.disable();
+		}
+		chrome.browserAction.enable();
 	}
 	function applyProxy() {
-		var onGetProxyPAC = function(data) {
-			if(typeof data === "string" && data.indexOf('function FindProxyForURL') === 0) {
-				chrome.proxy.settings.set({
-					value: {
-						mode: "pac_script",
-						pacScript: {data: data}
-					}
-				}, function(){
-					console.log('after set proxy:', arguments);
-				});
+		var url = 'http://' + config.server() + ':' + config.port() + '/proxy.pac';
+		chrome.proxy.settings.set({
+			value: {
+				mode: "pac_script",
+				pacScript: {url: url}
 			}
-		}
-		ajax({
-			url: 'http://' + config.server() + ':' + config.port() + '/proxy.pac',
-			success: onGetProxyPAC,
-			error: onGetProxyPAC
 		});
-		
+		chrome.proxy.onProxyError.addListener(function(e){
+			console.log(e);
+		});
+		config.proxy(true);
 	}
 	function doSetup(host, port, callback) {
 		ping(host, port, function(data){
@@ -120,23 +162,25 @@
 	function doAddHost(host, callback) {
 		var url = 'http://' + config.server() + ':' + config.port() + '/host/add';
 		ajax({
-			method: 'POST',
+			type: 'POST',
 			url: url,
 			data: 'host=' + host,
 			success: callback,
 			error: callback,
 			dataType: 'json'
 		});
+		hostsCache[host] = 1;
 	}
-	function doRemoveHost(host) {
+	function doRemoveHost(host, callback) {
 		var url = 'http://' + config.server() + ':' + config.port() + '/host/remove';
 		ajax({
-			method: 'POST',
+			type: 'POST',
 			url: url,
 			data: 'host=' + host,
 			success: callback,
 			error: callback,
 			dataType: 'json'
 		});
+		delete hostsCache[host];
 	}
 })();

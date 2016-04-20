@@ -18,3 +18,4 @@ input {display: inline-block;width: 220px;margin: 2px 0;}
 .setup {-webkit-transition: all .3s;}
 .clear {clear: both;}
 .setup-container, .info-container {display: none;}
+#info-box, #question-box {display: none;}

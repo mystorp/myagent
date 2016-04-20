@@ -1,11 +1,11 @@
-const config = require('./config');
-const fs = require('fs');
-const path = require('path');
+var config = require('./config');
+var fs = require('fs');
+var path = require('path');
 
-const adapters = require('./adapters');
+var adapters = require('./adapters');
 
-const HOST_FILE = path.join(__dirname, 'hosts');
-const host_cache = init();
+var HOST_FILE = path.join(__dirname, 'hosts');
+var host_cache = init();
 
 exports.addHost = addHost;
 exports.hasHost = hasHost;

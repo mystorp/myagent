@@ -1,13 +1,13 @@
-const http = require('http');
-const https = require('https');
-const urllib = require('url');
-const qs = require('querystring');
-const fs = require('fs');
+var http = require('http');
+var https = require('https');
+var urllib = require('url');
+var qs = require('querystring');
+var fs = require('fs');
 
-const utils = require('../utils');
-const config = require('../config');
-const hostmgt = require('../hostmgt');
-const adapterCache = loadAllAdapters();
+var utils = require('../utils');
+var config = require('../config');
+var hostmgt = require('../hostmgt');
+var adapterCache = loadAllAdapters();
 
 exports.getAdapterNames = getAdapterNames;
 exports.getAdapterFor = getAdapterFor;
@@ -126,6 +126,7 @@ function defaultConnectHandler(browserRequest, browserSocket, params) {
 	serverOptions.path = appendArgs(serverOptions.path, params);
 	var requestObj = mod.request(serverOptions, function(response){
 		response.pipe(browserSocket);
+		// response.pipe(process.stdout);
 	});
 	requestObj.on('error', function(e){
 		console.error(e.message);

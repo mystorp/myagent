@@ -17,7 +17,7 @@ var net = require('net');
 var http = require('http');
 var https = require('https');
 
-const DEBUG_PORT = 4000;
+var DEBUG_PORT = 4000;
 
 exports.tonicEndpoint = onRequest;
 if(module === require.main) {

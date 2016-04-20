@@ -1,10 +1,10 @@
-const url = require('url');
-const fs = require('fs');
-const net = require('net');
+var url = require('url');
+var fs = require('fs');
+var net = require('net');
 
-const config = require('./config');
-const httpRoutes = require('./httproutes');
-const agentAdapter = require('./adapters');
+var config = require('./config');
+var httpRoutes = require('./httproutes');
+var agentAdapter = require('./adapters');
 
 if(module === require.main) {
 	startProxyServer();

@@ -1,6 +1,6 @@
-const http = require('http');
-const https = require('https');
-const net = require('net');
+var http = require('http');
+var https = require('https');
+var net = require('net');
 
 exports.requestHandler = requestHandler;
 exports.connectHandler = connectHandler;

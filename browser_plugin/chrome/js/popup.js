@@ -1,20 +1,33 @@
 (function(){
-	var host = location.hostname;
-	testPluginSetuped();
+	var host, currentTabId;
+	chrome.tabs.query({active: true}, function(tabs){
+		var tab = tabs[0];
+		if(tab && tab.url) {
+			host = parseHost(tab.url);
+			testPluginSetuped();
+			currentTabId = tab.id;
+		}
+	});
+	
 	window.addEventListener('load', initEvents);
 
 	function $(s) { return document.querySelector(s); }
 	function addHost() {
-		chrome.sendMessage({cmd: 'add', host: host}, function(ret){
+		chrome.runtime.sendMessage({cmd: 'add', host: host}, function(ret){
+			chrome.tabs.reload(currentTabId);
+			hidePopup();
 			console.log('添加主机 ' + host + (ret ? ' 成功！' : ' 失败！'));
 		});
 	}
 	function removeHost() {
-		chrome.sendMessage({cmd: 'remove', host: host}, function(ret){
+		chrome.runtime.sendMessage({cmd: 'remove', host: host}, function(ret){
+			hidePopup();
 			console.log('删除主机 ' + host + (ret ? ' 成功！' : ' 失败！'));
 		});
 	}
-	function hidePopup() {}
+	function hidePopup() {
+		window.close();
+	}
 
 	function testPluginSetuped() {
 		chrome.runtime.sendMessage({cmd: 'has-setup'}, function(flag){
@@ -28,6 +41,7 @@
 	function showInfomation() {
 		$('.setup-container').style.display = "none";
 		$('.info-container').style.display = "block";
+		document.body.width = "230px";
 		chrome.runtime.sendMessage({cmd: 'query', host: host}, function(exists){
 			var boxEl = $(exists ? '#info-box' : '#question-box');
 			boxEl.style.display = "block";
@@ -61,5 +75,15 @@
 				case 'good': hidePopup(); break;
 			}
 		});
+	}
+	function parseHost(url) {
+		var i = url.indexOf('://') + '://'.length;
+		var j = url.indexOf('/', i);
+		var s = url.substring(i, j === -1 ? url.length : j);
+		if(s.indexOf(':') > -1) {
+			return s.split(':')[0];
+		} else {
+			return s;
+		}
 	}
 })();
