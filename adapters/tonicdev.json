@@ -2,9 +2,9 @@
 	"gfwProtected": true,
 	"server": {
 		"protocol": "https:",
-	    "port": 443,
-	    "host": "tonicdev.io",
-	    "path": "/aaronzhang/570140c376f90a11000927ab/branches/master",
-	    "method": "POST"
+		"port": 443,
+		"host": "tonicdev.io",
+		"path": "/aaronzhang/570140c376f90a11000927ab/branches/master",
+		"method": "POST"
 	}
 }
